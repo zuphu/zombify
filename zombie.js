@@ -288,11 +288,12 @@ WorldMap.prototype.spawnZombie = function(zx, zy) {
 WorldMap.prototype.endScenario = function () {
    console.log("[End Scenario]");
    this.drawAndDisplayBoard();
+   console.log("[NOTICE:Zombies weren't allowed to go through walls in this scenario.]");
+   console.log("zombies score: " + this.score);
+   process.stdout.write("zombies positions: ");
    for (var i = 0; i < this.zombies.length; ++i) {
       process.stdout.write(this.zombies[i].x + "," + this.zombies[i].y + " ");
    }
    process.stdout.write('\n');
-   console.log("Zombies weren't allowed to go through walls in this scenario.");
-   console.log("The scenario has ended");
    process.exit();
 }
