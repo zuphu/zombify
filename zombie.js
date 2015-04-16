@@ -1,8 +1,15 @@
 /* author:  Anthony Guevara
    date:    16 April 2015
    info:    Zombie Apocalypse
+   pre-req: Nodejs
    version: 3
    usage:   node zombie filename
+   info:    Zombie Apocalypse V3. An input file is supplied through command line 
+            argument (see usage above). Zombies(z) and creatures(c) are placed
+            based on co-ordinates read from file. The zombie moves based on a chain
+            of input sequences read from the input file. If a zombie touches a
+            creature, the creature becomes a zombie and will inherit the zombies
+            movement sequence.
 */
 var http = require('http');
 var readline = require('readline');
