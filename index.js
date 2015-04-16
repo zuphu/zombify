@@ -33,17 +33,34 @@ WorldMap.prototype.initBoard = function() {
    this.drawBoard();
    this.displayBoard();
 
-   while (counter != this.zombies.length) {
-      var counter = 0;
+   count = 0;
+   console.log("xxxxxxxxxxxxxxxxxxx");
+   console.log(count);
+   console.log(this.zombies.length);
+   while (count != this.zombies.length) {
+      count = 0;
       for (var x = 0; x < this.zombies.length; ++x) {
-         if (this.zombies[x].canMove == false)
-           counter++;
+         console.log(this.zombies);
+         console.log("CAN MOVE?");
+         console.log(this.zombies[x].canMove);
+         if (!this.zombies[x].canMove) {
+            count++;
+         }
       }
-      for (var i = 0; i < this.zombies.length; ++i)
+      console.log("COUNTER:" + count);
+      for (var i = 0; i < this.zombies.length && count != this.zombies.length; ++i) {
          this.stepZombie(i);
-
-      this.drawBoard();
-      this.displayBoard();
+         if ( this.zombieBite(i) ) {
+            this.zombies.push( new zmove(this.zombies[i].x, this.zombies[i].y) );
+            console.log("vbitepost");
+         }
+         else {
+            console.log("whitebite");
+         }
+         this.drawBoard();
+         console.log("after draw board");
+         this.displayBoard();
+      }
    }
    console.log(this.zombies);
 }
@@ -53,32 +70,28 @@ WorldMap.prototype.drawBoard = function () {
    for (var x = 0; x < this.dimension; ++x)
       this.board[x] = new Array();
    var board = this.board;
-
+   var zombies = this.zombies;
+   var creatures = this.creatures;
    //fill board
-   for(row = 0; row < this.dimension; ++row) { //row
-      for(col = 0; col < this.dimension; ++col) { //column
-         for (var i = 0; i < this.zombies.length; ++i) {
-            if (this.zombies[i].x == row && this.zombies[i].y == col) {
-               board[col][row] = "z";
-             }
-            else {
-               for (var i = 0; i < this.creatures.length; ++i) {
-                  if (this.creatures[i].x == row && this.creatures[i].y == col){
-                     board[col][row] = "c";
-                     break;
-                  }
-                  else {
-                     board[col][row] = "-";
-                  }
-               }
-            }
-         }
-      }
+   for(row = 0; row < this.dimension; ++row)
+      for(col = 0; col < this.dimension; ++col)
+         board[col][row] = "-";
+
+   drawZombies();
+   drawCreatures();
+
+   function drawZombies() {
+      for (var i = 0; i < zombies.length; ++i)
+         board[zombies[i].y][zombies[i].x] = "z";
+   }
+
+   function drawCreatures() {
+      for (var i = 0; i < creatures.length; ++i)
+         board[creatures[i].y][creatures[i].x] = "c";
    }
 }
 
 WorldMap.prototype.displayBoard = function() {
-   console.log("display board");
 
    for(row = 0; row < this.dimension; ++row) { //row
       for(col = 0; col < this.dimension; ++col) { //column
@@ -89,47 +102,81 @@ WorldMap.prototype.displayBoard = function() {
 }
 
 WorldMap.prototype.stepZombie = function(i) {
-   if (this.zombies[i].moveSequence >= this.movement.length) {
-      console.log("LEEEEEEEEEEEEEEEEEEEROY");
-      this.zombies[i].canMove = "false";
+   if (this.zombies[i].moveSequence == this.movement.length) {
+      this.zombies[i].canMove = false;
       return;
    }
 
-   var ms = this.zombies[i].movementSequence;
+   var ms = this.zombies[i].moveSequence;
    var m = this.movement[ms]
    switch (m) {
       case "U"://up
-         this.zombies[0].y -= 1;
-         console.log("up");
-         console.log(this.zombies);
+         if ((this.zombies[i].y - 1) > -1) {
+            this.zombies[i].y -= 1;
+            console.log("up");
+            console.log(this.zombies);
+         }
          break;
       case "R"://right
-         this.zombies[0].x += 1;
-         console.log("right");
-         console.log(this.zombies);
+         if ((this.zombies[i].x + 1) < this.dimension) {
+            this.zombies[i].x += 1;
+            console.log("right");
+            console.log(this.zombies);
+         }
          break;
       case "D"://down
-         this.zombies[0].y += 1;
-         console.log("down");
-         console.log(this.zombies);
+            this.zombies[i].y += 1;
+            console.log("down");
+            console.log(this.zombies);
          break;
       case "L"://left
-         this.zombies[0].x -= 1;
+      if ((this.zombies[i].x - 1) > -1) {
+         this.zombies[i].x -= 1;
          console.log("left");
          console.log(this.zombies);
-         break;
+      }
+      else {
+         console.log("Zombies can't go through walls!");
+      }
+      break;
    }
    this.zombies[i].moveSequence += 1;
-   console.log(this.zombies[i].moveSequence);
-   console.log(this.movement.length);
-   console.log(this.zombies.canMove);
-   this.zombieBite();
+   //console.log(this.zombies[i]);
+   //console.log(this.zombies[i].moveSequence);
+   //console.log(this.movement.length);
+   //console.log(this.zombies[i].canMove);
+   //this.zombieBite(i);
    //var x = new cord_xy(4,4)
    //this.zombies.push(x);
 }
 
-WorldMap.prototype.zombieBite = function() {
+WorldMap.prototype.zombieBite = function(i) {
+   zx = this.zombies[i].x;
+   zy = this.zombies[i].y;
+   for (var x = 0; x < this.creatures.length; ++x) {
+      if (zx == this.creatures[x].x &&
+          zy == this.creatures[x].y) {
+         console.log("Zombie has bitten a poor creature!");
+         var creatureDeathIndex = -1;
+         this.creatures.forEach(function(creature, i) {
+            if (creature.x == zx && creature.y == zy) {
+               creatureDeathIndex = i;
+            }
+         });
+         console.log("A critter has been slain!");
+         console.log(this.creatures[creatureDeathIndex]);
+         this.creatures.splice(creatureDeathIndex, 1);
+         //this.spawnZombie(zx, zy);
+         return true;
+      }
+   }
+   return false;
+}
 
+WorldMap.prototype.spawnZombie = function(zx, zy) {
+   console.log("new zombie has spawned!");
+   this.zombies.push(new zmove(zx, zy));
+   console.log(this.zombies);
 }
 
 function cord_xy (x, y) {
@@ -185,16 +232,14 @@ rd.on('line', function(line) {
 });
 
 function createScenario () {
-   var n = readFile.worldDimension.N;
-   var xy = readFile.initPositionZombie;
-   console.log(xy);
    var worldMap = new WorldMap(readFile)
-
-   console.log("board is:" + worldMap);
 }
 
 connect.use("/", function(req,res) {
-    res.end("Fear the reaper!!!");
+   res.setHeader("Content-type", "application/json");
+   res.write(JSON.stringify({score:3,
+            babes:4
+            }));
 });
 
 var server = http.createServer(connect);
