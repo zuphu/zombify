@@ -1,4 +1,0 @@
-.dicks.txt.swp
-.index.js.swp
-.package.json.swp
-.zombie.js.swp
