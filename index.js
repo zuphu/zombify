@@ -1,16 +1,15 @@
-var fs = require('fs');
 var http = require('http');
-var readline = require('readline');
 var connect = require('connect')();
-
-var readFile = {
-   worldDimension: { N: 0 },
-   initPositionZombie: [],
-   creaturePositions: [],
-   zombieMoveList: []
-};
-
+var readline = require('readline');
+var fs = require('fs');
 var lineNumber = 0;
+var fileName = "";
+
+var Arguments = {
+   NODE:     0,
+   PATH:     1,
+   FILENAME: 2
+}
 
 var FileLine = {
    AREA_DIMENSIONS: 1,
@@ -19,13 +18,81 @@ var FileLine = {
    ZOMBIE_MOVELIST: 4
 }
 
+var LINES_LIMIT = 4;
+
+var readFile = {
+   worldDimension     : { N: 0 },
+   initPositionZombie : [],
+   creaturePositions  : [],
+   zombieMoveList     : [],
+   loaded             : false
+};
+
+function cord_xy (x, y) {
+   this.x = x;
+   this.y = y;
+}
+
+function zmove (x, y) { 
+   cord_xy.call(this, x, y);
+   this.moveSequence = 0;
+   this.canMove = true;
+}
+zmove.prototype = new cord_xy();
+zmove.prototype.constructor = zmove;
+
+var args = function processArguments() {
+   console.log("Processing arguments");
+   fileName = process.argv[Arguments.FILENAME];
+}();
+
+var rd = readline.createInterface({
+    input: fs.createReadStream('./dicks.txt'),
+    output: process.stdout,
+    terminal: false
+});
+
+rd.on('line', function(line) {
+   ++lineNumber;
+   switch (lineNumber) {
+      case FileLine.AREA_DIMENSIONS:
+         readFile.worldDimension.N = parseInt(line);
+         console.log(readFile.worldDimension.N);
+         break;
+      case FileLine.ZOMBIE_COORD:
+         var xy = line.split(" ");
+         var cords = new zmove( parseInt(xy[0]), parseInt(xy[1]) );
+         readFile.initPositionZombie.push(cords);;
+         console.log(readFile.initPositionZombie);
+         break;
+      case FileLine.CREATURE_COORD:
+         var cords = line.split(",");
+         cords.forEach(function (cord){
+            var xy = cord.split(" ");
+            var x = parseInt(xy[0]); var y = parseInt(xy[1]);
+            readFile.creaturePositions.push(new cord_xy(x, y));
+         });
+         console.log(readFile.creaturePositions);
+         break;
+      case FileLine.ZOMBIE_MOVELIST:
+         for (x = 0; x < line.length; ++x) {
+            readFile.zombieMoveList.push(line[x]);
+         }
+         console.log(readFile.zombieMoveList);
+         break;
+   }
+   if (lineNumber >= 4) { //all lines have been read
+      readFile.loaded = true;
+      var worldMap = new WorldMap(readFile); //create world map
+   }
+});
+
 function WorldMap (readFile) {
    this.dimension = readFile.worldDimension.N;
    this.zombies   = readFile.initPositionZombie;
-   console.log("ALL THE ZOMBIES!!!");
-   console.log(this.zombies);
    this.creatures = readFile.creaturePositions;
    this.movement  = readFile.zombieMoveList;
+   this.score     = 0;
    this.initBoard();
 }
 
@@ -179,58 +246,6 @@ WorldMap.prototype.spawnZombie = function(zx, zy) {
    console.log(this.zombies);
 }
 
-function cord_xy (x, y) {
-   this.x = x;
-   this.y = y;
-}
-
-function zmove (x, y) { 
-   cord_xy.call(this, x, y);
-   this.moveSequence = 0;
-   this.canMove = true;
-}
-zmove.prototype = new cord_xy();
-zmove.prototype.constructor = zmove;
-
-var rd = readline.createInterface({
-    input: fs.createReadStream('./dicks.txt'),
-    output: process.stdout,
-    terminal: false
-});
-
-rd.on('line', function(line) {
-   ++lineNumber;
-   switch (lineNumber) {
-      case FileLine.AREA_DIMENSIONS:
-         readFile.worldDimension.N = parseInt(line);
-         console.log(readFile.worldDimension.N);
-         break;
-      case FileLine.ZOMBIE_COORD:
-         var xy = line.split(" ");
-         var cords = new zmove( parseInt(xy[0]), parseInt(xy[1]) );
-         readFile.initPositionZombie.push(cords);;
-         console.log(readFile.initPositionZombie);
-         break;
-      case FileLine.CREATURE_COORD:
-         var cords = line.split(",");
-         cords.forEach(function (cord){
-            var xy = cord.split(" ");
-            var x = parseInt(xy[0]); var y = parseInt(xy[1]);
-            readFile.creaturePositions.push(new cord_xy(x, y));
-         });
-         console.log(readFile.creaturePositions);
-         break;
-      case FileLine.ZOMBIE_MOVELIST:
-         for (x = 0; x < line.length; ++x) {
-            readFile.zombieMoveList.push(line[x]);
-         }
-         console.log(readFile.zombieMoveList);
-         break;
-   }
-   if (lineNumber >= 4)
-      createScenario();
-});
-
 function createScenario () {
    var worldMap = new WorldMap(readFile)
 }
@@ -246,6 +261,5 @@ var server = http.createServer(connect);
 
 server.listen(3000, function() {
    console.log("Server listenning on port 3000)");
-
 });
 
